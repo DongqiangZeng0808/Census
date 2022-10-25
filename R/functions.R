@@ -185,7 +185,7 @@ train_node = function(obj,
                       cell_node_match = NULL,
                       sparsity = c(0.9),
                       ptile = 100,
-                      topn = NULL,
+                      topn = 100,
                       nrounds = 20,
                       eval_metric = 'auc',
                       colsample = 0.2,
@@ -194,15 +194,24 @@ train_node = function(obj,
   obj$celltype = celltypes
 
   idx = which(hierarchy_mat == node, arr.ind = T)
+  print(idx)
   new_ids = hierarchy_mat[idx[1,1] + 1, idx[,2]] %>% as.character() %>% unique()
+  print(new_ids)
+
   if(is.null(cell_node_match)){cell_node_match = match(obj$celltype, colnames(hierarchy_mat))}
+  print(cell_node_match)
+
+
   Seurat::Idents(obj) = hierarchy_mat[idx[1,1] + 1, cell_node_match]
   obj = subset(obj, idents = new_ids)
+  print(table(Idents(obj)))
+  DefaultAssay(obj)<-"RNA"
 
   if(is.null(markers)){markers = Seurat::FindAllMarkers(obj, only.pos = T, ...)}
   if(is.integer(topn)){markers = markers %>% dplyr::group_by(cluster) %>% dplyr::top_n(topn, avg_logFC)}
 
   x = obj@assays$RNA@counts[markers$gene, ] %>% as.matrix()
+
   new_x = x
   y = Seurat::Idents(obj) %>% factor(levels = Seurat::Idents(obj) %>% unique() %>% as.character() %>% sort()) %>% as.numeric() - 1
 
@@ -280,12 +289,14 @@ census_train = function(obj,
                         noise_frac = NULL,
                         ...){
   xg.list = list()
-  markers.list = list()
+  # markers.list = list()
   auc.df = data.frame()
 
   if(is.null(hierarchy_mat)){
     if(verbose == T){cat('Finding cell-type hierarchy\n')}
     hierarchy_mat = cell_hierarchy(obj@assays$RNA@counts, celltypes)
+
+    print(hierarchy_mat)
   }
 
   cell_node_match = match(celltypes, colnames(hierarchy_mat))
@@ -295,7 +306,11 @@ census_train = function(obj,
     for(i in remaining_ids){
     # loop = foreach(i = remaining_ids, .packages = 'dplyr') %do% {
       if(verbose == T){cat(paste('\rTraining node:', i, '\n'))}
-      if(!is.null(markers.list)){markers = markers.list[[i]]}
+      if(!is.null(markers.list)){
+        markers = markers.list[[i]]
+      }else{
+          markers<-NULL
+        }
       node_res = train_node(obj = obj,
                             node = i,
                             hierarchy_mat = hierarchy_mat,

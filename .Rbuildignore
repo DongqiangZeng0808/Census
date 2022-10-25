@@ -1,0 +1,6 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^LICENSE\.md$
+^1-building-Census\.R$
+^README\.Rmd$
+^2-Testing-functions\.R$
