@@ -16,6 +16,8 @@ census_train(
   eval_metric = "auc",
   colsample = 0.2,
   verbose = T,
+  noise = NULL,
+  noise_frac = NULL,
   ...
 )
 }

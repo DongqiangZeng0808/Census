@@ -266,6 +266,7 @@ train_node = function(obj,
 #'
 census_train = function(obj,
                         celltypes,
+                        assay = "RNA",
                         hierarchy_mat = NULL,
                         metadata = NULL,
                         markers.list = NULL,
@@ -275,6 +276,8 @@ census_train = function(obj,
                         eval_metric = 'auc',
                         colsample = 0.2,
                         verbose = T,
+                        noise = NULL,
+                        noise_frac = NULL,
                         ...){
   xg.list = list()
   markers.list = list()
@@ -301,12 +304,12 @@ census_train = function(obj,
                             markers = markers,
                             cell_node_match = cell_node_match,
                             sparsity = sparsity,
-                            noise = noise,
-                            noise_frac = noise_frac,
                             ptile = ptile,
                             nrounds = nrounds,
                             eval_metric = eval_metric,
                             colsample = colsample,
+                            noise = noise,
+                            noise_frac = noise_frac,
                             ...)
 
       xg.list[[i]] = node_res$model
