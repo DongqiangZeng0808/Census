@@ -201,10 +201,10 @@ train_node = function(obj,
   if(is.null(cell_node_match)){cell_node_match = match(obj$celltype, colnames(hierarchy_mat))}
   print(cell_node_match)
 
-
   Seurat::Idents(obj) = hierarchy_mat[idx[1,1] + 1, cell_node_match]
   obj = subset(obj, idents = new_ids)
   print(table(Idents(obj)))
+
   DefaultAssay(obj)<-"RNA"
 
   if(is.null(markers)){markers = Seurat::FindAllMarkers(obj, only.pos = T, ...)}
