@@ -202,16 +202,18 @@ train_node = function(obj,
   print(cell_node_match)
 
   Seurat::Idents(obj) = hierarchy_mat[idx[1,1] + 1, cell_node_match]
-  obj = subset(obj, idents = new_ids)
+  print(table(Idents(obj)))
+
+  obj <- subset(obj, idents = as.character(new_ids))
   print(table(Idents(obj)))
 
   DefaultAssay(obj)<-"RNA"
 
-  if(is.null(markers)){markers = Seurat::FindAllMarkers(obj, only.pos = T, ...)}
+  if(is.null(markers)){markers = Seurat::FindAllMarkers(obj, only.pos = T, max.cells.per.ident = 2000, ...)}
   if(is.integer(topn)){markers = markers %>% dplyr::group_by(cluster) %>% dplyr::top_n(topn, avg_logFC)}
 
+  # Memory occupied
   x = obj@assays$RNA@counts[markers$gene, ] %>% as.matrix()
-
   new_x = x
   y = Seurat::Idents(obj) %>% factor(levels = Seurat::Idents(obj) %>% unique() %>% as.character() %>% sort()) %>% as.numeric() - 1
 
