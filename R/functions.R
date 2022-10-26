@@ -172,6 +172,7 @@ plot_cell_hierarchy = function(hierarchy_mat, circular = F,
 #' @param eval_metric Evaluation metric for xgbosot classification algorithm
 #' @param colsample Fraction of features to sample per tree. See xgboost documentation for more details for this and other possible parameters
 #' @param ... Arguments passed to other methods
+#' @param max.cell.number Down sample each identity class to a max number. Default is no downsampling.
 #'
 #' @return Returns a list containing the xgboost model, a dataframe containing the marker genes data, and the classification AUC
 #' @export
@@ -189,27 +190,25 @@ train_node = function(obj,
                       nrounds = 20,
                       eval_metric = 'auc',
                       colsample = 0.2,
+                      max.cell.number = 2000,
                       ...){
 
   obj$celltype = celltypes
 
   idx = which(hierarchy_mat == node, arr.ind = T)
-  print(idx)
+  # print(idx)
   new_ids = hierarchy_mat[idx[1,1] + 1, idx[,2]] %>% as.character() %>% unique()
-  print(new_ids)
-
+  # print(new_ids)
   if(is.null(cell_node_match)){cell_node_match = match(obj$celltype, colnames(hierarchy_mat))}
-  print(cell_node_match)
-
-  Seurat::Idents(obj) = hierarchy_mat[idx[1,1] + 1, cell_node_match]
-  print(table(Idents(obj)))
-
+  # print(cell_node_match)
+  # print(hierarchy_mat[idx[1,1] + 1, cell_node_match])
+  Idents(obj) = hierarchy_mat[idx[1,1] + 1, cell_node_match]
+  # print(table(Idents(obj)))
   obj <- subset(obj, idents = as.character(new_ids))
+  # print("2222222")
   print(table(Idents(obj)))
 
-  DefaultAssay(obj)<-"RNA"
-
-  if(is.null(markers)){markers = Seurat::FindAllMarkers(obj, only.pos = T, max.cells.per.ident = 2000, ...)}
+  if(is.null(markers)){markers = FindAllMarkers(obj, assay = "RNA", slot = "counts", only.pos = T, max.cells.per.ident = max.cell.number, ...)}
   if(is.integer(topn)){markers = markers %>% dplyr::group_by(cluster) %>% dplyr::top_n(topn, avg_logFC)}
 
   # Memory occupied
@@ -263,14 +262,16 @@ train_node = function(obj,
 #' @param hierarchy_mat Cell-type hierarchy dataframe
 #' @param metadata Optional metadata to use for proportional weighting of training data. Default weighting of training data is to weight inversely proportional to class size
 #' @param markers.list Optional list containing cell-type markers to be used for model training. Each list element must contain a dataframe with a column named "gene". If absent, Seurat's FindMarkers is used. The list must be named according to the cell-type hierarchy node names.
-#' @param cell_node_match Optional custom matching of cell-type labels to cell-type hierarchy labels. This should seldom be used.
 #' @param sparsity Fraction of values to replace with NA/missing values. Can be a vector or NULL
 #' @param ptile Number of ntile groups to create for gene expression values; e.g. if 100, will percentile rank genes per cell, if 4 will quartile rank genes
-#' @param topn Optional number of marker genes to use per model. Will selec the topn genes by fold change ranking. If NULL will use all statistically significant genes
 #' @param nrounds Number of boosting rounds for model classification
 #' @param eval_metric Evaluation metric for xgbosot classification algorithm
 #' @param colsample Fraction of features to sample per tree. See xgboost documentation for more details for this and other possible parameters
 #' @param ... Arguments passed to other methods. The most relevant methods include train_node, Seurat::FindAllMarkers, and xgboost::xgboost
+#' @param verbose default is NULL
+#' @param max.cell.number Down sample each identity class to a max number. Default is no downsampling.
+#' @param noise default is NULL
+#' @param noise_frac default is NULL
 #'
 #' @return Returns a list containing the hierarchical models, a list of dataframes containing the marker genes data for each node model, the classification AUC for each node model, and the cell-type hierarchy used
 #' @export
@@ -287,6 +288,7 @@ census_train = function(obj,
                         eval_metric = 'auc',
                         colsample = 0.2,
                         verbose = T,
+                        max.cell.number = 2000,
                         noise = NULL,
                         noise_frac = NULL,
                         ...){
@@ -327,6 +329,7 @@ census_train = function(obj,
                             colsample = colsample,
                             noise = noise,
                             noise_frac = noise_frac,
+                            max.cell.number = max.cell.number,
                             ...)
 
       xg.list[[i]] = node_res$model
